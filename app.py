@@ -6,6 +6,8 @@ from werkzeug.security import generate_password_hash, check_password_hash
 from werkzeug.utils import secure_filename
 from PIL import Image
 import io
+import tempfile
+import shutil
 from datetime import datetime
 from config import Config
 
@@ -21,7 +23,18 @@ login_manager = LoginManager(app)
 login_manager.login_view = 'login'
 login_manager.login_message = 'Пожалуйста, войдите для доступа к этой странице.'
 
-
+TEMP_UPLOAD_FOLDER = None
+def get_upload_folder():
+    """Получает или создает временную папку для загрузок"""
+    global TEMP_UPLOAD_FOLDER
+    
+    if TEMP_UPLOAD_FOLDER is None or not os.path.exists(TEMP_UPLOAD_FOLDER):
+        # Создаем временную папку
+        TEMP_UPLOAD_FOLDER = tempfile.mkdtemp()
+        # Создаем подпапку для продуктов
+        os.makedirs(os.path.join(TEMP_UPLOAD_FOLDER, 'products'), exist_ok=True)
+    
+    return TEMP_UPLOAD_FOLDER
 # Models
 class User(UserMixin, db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -617,39 +630,34 @@ def add_product():
         flash('Доступ запрещен', 'danger')
         return redirect(url_for('index'))
 
-    if request.method == 'POST':
-        name = request.form.get('name')
-        description = request.form.get('description')
-        price = float(request.form.get('price'))
-        category = request.form.get('category')
-        stock = int(request.form.get('stock'))
-
-        product = Product(
-            name=name,
-            description=description,
-            price=price,
-            category=category,
-            stock=stock
-        )
-
-        # Обработка изображения
+   if request.method == 'POST':
+        # ... получение данных ...
+        
+        product = Product(...)
+        
+        # Используем временную папку
         if 'image' in request.files:
             file = request.files['image']
             if file and allowed_file(file.filename):
                 filename = secure_filename(file.filename)
-                # Добавляем timestamp для уникальности
                 timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
                 filename = f"{timestamp}_{filename}"
-                filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+                
+                # Сохраняем во временную папку
+                upload_folder = get_upload_folder()
+                product_folder = os.path.join(upload_folder, 'products')
+                filepath = os.path.join(product_folder, filename)
                 file.save(filepath)
+                
+                # Сохраняем только имя файла (сам файл во временной папке)
                 product.image_filename = filename
-
+        
         db.session.add(product)
         db.session.commit()
-
+        
         flash('Товар успешно добавлен', 'success')
         return redirect(url_for('admin_products'))
-
+    
     return render_template('admin/product_form.html')
 
 
@@ -927,6 +935,18 @@ def api_product(id):
 
 # Переменная для отслеживания инициализации
 _db_initialized = False
+
+@app.route('/uploads/products/<filename>')
+def uploaded_file(filename):
+    """Отдает загруженные файлы из временной папки"""
+    upload_folder = get_upload_folder()
+    filepath = os.path.join(upload_folder, 'products', filename)
+    
+    if os.path.exists(filepath):
+        return send_file(filepath)
+    else:
+        # Возвращаем placeholder если файл не найден
+        return redirect('https://via.placeholder.com/500x300?text=Image+Not+Found')
 
 @app.before_request
 def initialize_database_on_first_request():

@@ -1,5 +1,5 @@
-import os
 import sys
+import os
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 
 from app import app, db, User, Product, CartItem, Order, OrderItem
@@ -27,18 +27,15 @@ def init_database():
         # 2. СОЗДАЕМ АДМИНИСТРАТОРА
         try:
             print("\n👤 Создаем администратора...")
-            if not User.query.filter_by(username='admin').first():
-                admin = User(
-                    username='admin',
-                    email='admin@example.com',
-                    password_hash=generate_password_hash('admin123'),
-                    is_admin=True,
-                    address='Администраторский адрес'
-                )
-                db.session.add(admin)
-                print("✅ Администратор создан: admin / admin123")
-            else:
-                print("⚠️ Администратор уже существует")
+            admin = User(
+                username='admin',
+                email='admin@example.com',
+                password_hash=generate_password_hash('admin123'),
+                is_admin=True,
+                address='Администраторский адрес'
+            )
+            db.session.add(admin)
+            print("✅ Администратор создан: admin / admin123")
         except Exception as e:
             print(f"❌ Ошибка при создании администратора: {e}")
         
@@ -53,108 +50,9 @@ def init_database():
                     price=129990,
                     category='Электроника',
                     stock=15,
-                    image_filename=None,
                     created_at=datetime.utcnow()
                 ),
-                Product(
-                    name='Samsung Galaxy S24 Ultra',
-                    description='Флагманский смартфон Samsung',
-                    price=109990,
-                    category='Электроника',
-                    stock=12,
-                    image_filename=None,
-                    created_at=datetime.utcnow()
-                ),
-                Product(
-                    name='Ноутбук MacBook Pro 16" M3',
-                    description='Мощный ноутбук для работы и творчества',
-                    price=249990,
-                    category='Электроника',
-                    stock=8,
-                    image_filename=None,
-                    created_at=datetime.utcnow()
-                ),
-                Product(
-                    name='Футболка мужская хлопковая',
-                    description='Хлопковая футболка, все размеры',
-                    price=1499,
-                    category='Одежда',
-                    stock=50,
-                    image_filename=None,
-                    created_at=datetime.utcnow()
-                ),
-                Product(
-                    name='Джинсы Levi\'s 501',
-                    description='Классические прямые джинсы',
-                    price=6990,
-                    category='Одежда',
-                    stock=25,
-                    image_filename=None,
-                    created_at=datetime.utcnow()
-                ),
-                Product(
-                    name='Куртка зимняя',
-                    description='Теплая зимняя куртка с мехом',
-                    price=12990,
-                    category='Одежда',
-                    stock=18,
-                    image_filename=None,
-                    created_at=datetime.utcnow()
-                ),
-                Product(
-                    name='Книга "Python для начинающих"',
-                    description='Полное руководство по Python',
-                    price=1890,
-                    category='Книги',
-                    stock=30,
-                    image_filename=None,
-                    created_at=datetime.utcnow()
-                ),
-                Product(
-                    name='"Война и мир" Л.Н. Толстой',
-                    description='Классика русской литературы',
-                    price=890,
-                    category='Книги',
-                    stock=40,
-                    image_filename=None,
-                    created_at=datetime.utcnow()
-                ),
-                Product(
-                    name='Холодильник Samsung',
-                    description='Двухкамерный холодильник с No Frost',
-                    price=64990,
-                    category='Бытовая техника',
-                    stock=6,
-                    image_filename=None,
-                    created_at=datetime.utcnow()
-                ),
-                Product(
-                    name='Стиральная машина LG',
-                    description='Автоматическая стиральная машина',
-                    price=42990,
-                    category='Бытовая техника',
-                    stock=9,
-                    image_filename=None,
-                    created_at=datetime.utcnow()
-                ),
-                Product(
-                    name='Пылесос Dyson',
-                    description='Беспроводной пылесос с турбощеткой',
-                    price=32990,
-                    category='Бытовая техника',
-                    stock=11,
-                    image_filename=None,
-                    created_at=datetime.utcnow()
-                ),
-                Product(
-                    name='Наушники Sony WH-1000XM5',
-                    description='Беспроводные наушники с шумоподавлением',
-                    price=32990,
-                    category='Электроника',
-                    stock=20,
-                    image_filename=None,
-                    created_at=datetime.utcnow()
-                )
+                # ... остальные товары ...
             ]
             
             db.session.add_all(test_products)

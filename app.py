@@ -1,4 +1,5 @@
 import os
+import uuid
 from flask import Flask, render_template, request, redirect, url_for, flash, jsonify, send_file
 from flask_sqlalchemy import SQLAlchemy
 from flask_login import LoginManager, UserMixin, login_user, login_required, logout_user, current_user
@@ -40,6 +41,57 @@ def get_upload_folder():
     return TEMP_UPLOAD_FOLDER
 
 # ==== MODELS (ИСПРАВЛЕННАЯ ВЕРСИЯ) ====
+def save_product_image(file):
+    """Сохраняет изображение товара и возвращает имя файла"""
+    if not file or file.filename == '':
+        return None
+    
+    # Проверяем расширение файла
+    if not allowed_file(file.filename):
+        return None
+    
+    # Генерируем уникальное имя файла
+    ext = file.filename.rsplit('.', 1)[1].lower()
+    filename = f"{uuid.uuid4().hex}.{ext}"
+    
+    # Создаем пути
+    upload_folder = app.config['PRODUCT_IMAGE_FOLDER']
+    
+    # Создаем папки если их нет
+    os.makedirs(upload_folder, exist_ok=True)
+    
+    filepath = os.path.join(upload_folder, filename)
+    
+    try:
+        # Открываем изображение с PIL для проверки
+        image = Image.open(file.stream)
+        
+        # Оптимизируем размер (макс. 800x800)
+        image.thumbnail((800, 800))
+        
+        # Сохраняем с оптимизацией
+        if ext in ['jpg', 'jpeg']:
+            image.save(filepath, 'JPEG', quality=85, optimize=True)
+        elif ext == 'png':
+            image.save(filepath, 'PNG', optimize=True)
+        else:
+            file.save(filepath)
+        
+        return filename
+    except Exception as e:
+        app.logger.error(f"Error saving image: {e}")
+        return None
+
+def delete_product_image(filename):
+    """Удаляет изображение товара"""
+    if filename:
+        try:
+            filepath = os.path.join(app.config['PRODUCT_IMAGE_FOLDER'], filename)
+            if os.path.exists(filepath):
+                os.remove(filepath)
+        except Exception as e:
+            app.logger.error(f"Error deleting image: {e}")
+
 
 class User(UserMixin, db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -691,22 +743,13 @@ def add_product():
             # Обработка изображения
             if 'image' in request.files:
                 file = request.files['image']
-                if file and file.filename != '' and allowed_file(file.filename):
-                    filename = secure_filename(file.filename)
-                    timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
-                    filename = f"{timestamp}_{filename}"
-                    
-                    # Сохраняем во временную папку
-                    upload_folder = get_upload_folder()
-                    product_folder = os.path.join(upload_folder, 'products')
-                    filepath = os.path.join(product_folder, filename)
-                    
-                    # Сохраняем файл
-                    file.save(filepath)
-                    
-                    # Сохраняем только имя файла
-                    product.image_filename = filename
-                    print(f"📸 Изображение сохранено: {filepath}")
+                if file and file.filename != '':
+                    filename = save_product_image(file)
+                    if filename:
+                        product.image_filename = filename
+                        flash('Изображение успешно загружено', 'success')
+                    else:
+                        flash('Ошибка при загрузке изображения. Проверьте формат файла.', 'warning')
 
             db.session.add(product)
             db.session.commit()
@@ -744,23 +787,18 @@ def edit_product(id):
             # Обработка нового изображения
             if 'image' in request.files:
                 file = request.files['image']
-                if file and file.filename != '' and allowed_file(file.filename):
+                if file and file.filename != '':
                     # Удаляем старое изображение если есть
                     if product.image_filename:
-                        old_path = os.path.join(get_upload_folder(), 'products', product.image_filename)
-                        if os.path.exists(old_path):
-                            os.remove(old_path)
-
-                    filename = secure_filename(file.filename)
-                    timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
-                    filename = f"{timestamp}_{filename}"
+                        delete_product_image(product.image_filename)
                     
-                    # Сохраняем во временную папку
-                    upload_folder = get_upload_folder()
-                    product_folder = os.path.join(upload_folder, 'products')
-                    filepath = os.path.join(product_folder, filename)
-                    file.save(filepath)
-                    product.image_filename = filename
+                    # Сохраняем новое
+                    filename = save_product_image(file)
+                    if filename:
+                        product.image_filename = filename
+                        flash('Изображение успешно обновлено', 'success')
+                    else:
+                        flash('Ошибка при загрузке изображения', 'warning')
 
             db.session.commit()
             flash('Товар успешно обновлен', 'success')
@@ -788,9 +826,7 @@ def delete_product(id):
     try:
         # Удаляем изображение если есть
         if product.image_filename:
-            filepath = os.path.join(get_upload_folder(), 'products', product.image_filename)
-            if os.path.exists(filepath):
-                os.remove(filepath)
+            delete_product_image(product.image_filename)
 
         # Удаляем связанные записи в корзине
         CartItem.query.filter_by(product_id=id).delete()
@@ -805,7 +841,6 @@ def delete_product(id):
         flash(f'Ошибка при удалении товара: {str(e)}', 'danger')
 
     return redirect(url_for('admin_products'))
-
 
 @app.route('/admin/user/toggle_admin/<int:id>', methods=['POST'])
 @login_required
@@ -1027,23 +1062,24 @@ def api_product(id):
 
 @app.route('/uploads/products/<filename>')
 def uploaded_file(filename):
-    """Отдает загруженные файлы из временной папки"""
+    """Отдает загруженные файлы"""
     try:
-        upload_folder = get_upload_folder()
-        filepath = os.path.join(upload_folder, 'products', filename)
+        # Пробуем найти файл в разных местах
+        possible_paths = [
+            os.path.join(app.config['PRODUCT_IMAGE_FOLDER'], filename),
+            os.path.join('static/uploads/products', filename),
+            os.path.join('/tmp/uploads/products', filename),
+        ]
         
-        if os.path.exists(filepath):
-            return send_file(filepath)
-        else:
-            # Возвращаем placeholder если файл не найден
-            return redirect('https://via.placeholder.com/500x300?text=Image+Not+Found')
+        for filepath in possible_paths:
+            if os.path.exists(filepath):
+                return send_file(filepath)
+        
+        # Если файл не найден, возвращаем placeholder
+        return redirect('https://via.placeholder.com/500x300?text=No+Image')
     except Exception as e:
         app.logger.error(f'Error serving file {filename}: {e}')
         return redirect('https://via.placeholder.com/500x300?text=Error+Loading+Image')
-
-
-# Переменная для отслеживания инициализации
-_db_initialized = False
 
 @app.before_request
 def initialize_database_on_first_request():

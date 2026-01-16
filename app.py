@@ -925,7 +925,47 @@ def api_product(id):
     product = Product.query.get_or_404(id)
     return jsonify(product.to_dict())
 
-
+# Автоматическая инициализация базы данных при первом запросе
+@app.before_first_request
+def initialize_database():
+    """Создает таблицы и тестовые данные при первом запросе к приложению"""
+    try:
+        print("🔄 Инициализация базы данных...")
+        
+        # Пытаемся выполнить простой запрос чтобы проверить таблицы
+        try:
+            # Если таблица product существует, этот запрос должен работать
+            Product.query.first()
+            print("✅ Таблицы уже существуют")
+            return
+        except:
+            # Если запрос не удался - создаем таблицы
+            print("📦 Создаем таблицы...")
+            db.create_all()
+            
+            # Создаем админа
+            from werkzeug.security import generate_password_hash
+            admin = User(
+                username='admin',
+                email='admin@example.com',
+                password_hash=generate_password_hash('admin123'),
+                is_admin=True
+            )
+            db.session.add(admin)
+            
+            # Создаем минимальные тестовые данные
+            products = [
+                Product(name='Телефон', price=10000, category='Электроника', stock=10),
+                Product(name='Книга', price=500, category='Книги', stock=20),
+            ]
+            for p in products:
+                db.session.add(p)
+            
+            db.session.commit()
+            print("✅ База данных инициализирована!")
+            
+    except Exception as e:
+        print(f"❌ Ошибка при инициализации базы данных: {e}")
 # Обработчики ошибок
 @app.errorhandler(404)
 def page_not_found(e):

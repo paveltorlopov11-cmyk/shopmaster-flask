@@ -39,7 +39,8 @@ def get_upload_folder():
     
     return TEMP_UPLOAD_FOLDER
 
-# Models
+# ==== MODELS (ИСПРАВЛЕННАЯ ВЕРСИЯ) ====
+
 class User(UserMixin, db.Model):
     id = db.Column(db.Integer, primary_key=True)
     username = db.Column(db.String(80), unique=True, nullable=False)
@@ -49,24 +50,15 @@ class User(UserMixin, db.Model):
     is_admin = db.Column(db.Boolean, default=False)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
-    # Отношения
-    cart_items = db.relationship('CartItem', backref='cart_user', lazy=True)
-    orders = db.relationship('Order', backref='order_user', lazy=True)
+    # Отношения - удалите или переименуйте backref чтобы избежать конфликтов
+    cart_items = db.relationship('CartItem', backref='user_ref', lazy=True)
+    orders = db.relationship('Order', backref='user_ref', lazy=True)
 
     def set_password(self, password):
         self.password_hash = generate_password_hash(password)
 
     def check_password(self, password):
         return check_password_hash(self.password_hash, password)
-
-    def to_dict(self):
-        return {
-            'id': self.id,
-            'username': self.username,
-            'email': self.email,
-            'is_admin': self.is_admin,
-            'created_at': self.created_at.strftime('%Y-%m-%d %H:%M:%S')
-        }
 
 
 class Product(db.Model):
@@ -80,20 +72,8 @@ class Product(db.Model):
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
     # Отношения
-    cart_items = db.relationship('CartItem', backref='cart_product', lazy=True)
-    order_items = db.relationship('OrderItem', backref='order_product', lazy=True)
-
-    def to_dict(self):
-        return {
-            'id': self.id,
-            'name': self.name,
-            'description': self.description,
-            'price': self.price,
-            'category': self.category,
-            'stock': self.stock,
-            'image_url': url_for('uploaded_file', filename=self.image_filename) if self.image_filename else None,
-            'created_at': self.created_at.strftime('%Y-%m-%d %H:%M:%S')
-        }
+    cart_items = db.relationship('CartItem', backref='product_ref', lazy=True)
+    order_items = db.relationship('OrderItem', backref='product_ref', lazy=True)
 
 
 class CartItem(db.Model):
@@ -103,18 +83,9 @@ class CartItem(db.Model):
     quantity = db.Column(db.Integer, default=1)
     added_at = db.Column(db.DateTime, default=datetime.utcnow)
 
+    # Явные relationship с foreign_keys
     user = db.relationship('User', foreign_keys=[user_id])
     product = db.relationship('Product', foreign_keys=[product_id])
-
-    def to_dict(self):
-        return {
-            'id': self.id,
-            'product_id': self.product_id,
-            'product_name': self.product.name if self.product else None,
-            'product_price': self.product.price if self.product else None,
-            'quantity': self.quantity,
-            'subtotal': self.product.price * self.quantity if self.product else 0
-        }
 
 
 class Order(db.Model):
@@ -131,8 +102,9 @@ class Order(db.Model):
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
+    # Отношения - используем разные имена для backref
     user = db.relationship('User', foreign_keys=[user_id])
-    items = db.relationship('OrderItem', backref='order', lazy=True, cascade='all, delete-orphan')
+    items = db.relationship('OrderItem', backref='order_ref', lazy=True, cascade='all, delete-orphan')
 
     def to_dict(self):
         return {
@@ -141,8 +113,7 @@ class Order(db.Model):
             'status': self.status,
             'total_amount': self.total_amount,
             'payment_status': self.payment_status,
-            'created_at': self.created_at.strftime('%d.%m.%Y %H:%M'),
-            'user': self.user.username if self.user else None
+            'created_at': self.created_at.strftime('%d.%m.%Y %H:%M')
         }
 
 
@@ -154,6 +125,7 @@ class OrderItem(db.Model):
     product_price = db.Column(db.Float, nullable=False)
     quantity = db.Column(db.Integer, nullable=False)
 
+    # Явные relationship с foreign_keys
     order = db.relationship('Order', foreign_keys=[order_id])
     product = db.relationship('Product', foreign_keys=[product_id])
 
@@ -165,7 +137,6 @@ class OrderItem(db.Model):
             'quantity': self.quantity,
             'subtotal': self.product_price * self.quantity
         }
-
 
 @login_manager.user_loader
 def load_user(user_id):

@@ -925,47 +925,60 @@ def api_product(id):
     product = Product.query.get_or_404(id)
     return jsonify(product.to_dict())
 
-# Автоматическая инициализация базы данных при первом запросе
-@app.before_first_request
-def initialize_database():
-    """Создает таблицы и тестовые данные при первом запросе к приложению"""
-    try:
-        print("🔄 Инициализация базы данных...")
-        
-        # Пытаемся выполнить простой запрос чтобы проверить таблицы
+# Переменная для отслеживания инициализации
+_db_initialized = False
+
+@app.before_request
+def initialize_database_on_first_request():
+    """Инициализация базы данных при первом запросе"""
+    global _db_initialized
+    
+    if not _db_initialized:
         try:
-            # Если таблица product существует, этот запрос должен работать
-            Product.query.first()
-            print("✅ Таблицы уже существуют")
-            return
-        except:
-            # Если запрос не удался - создаем таблицы
-            print("📦 Создаем таблицы...")
-            db.create_all()
+            print("🔄 Проверяем базу данных при первом запросе...")
             
-            # Создаем админа
-            from werkzeug.security import generate_password_hash
-            admin = User(
-                username='admin',
-                email='admin@example.com',
-                password_hash=generate_password_hash('admin123'),
-                is_admin=True
-            )
-            db.session.add(admin)
+            with app.app_context():
+                # Проверяем существует ли таблица product
+                from sqlalchemy import inspect
+                inspector = inspect(db.engine)
+                
+                if 'product' not in inspector.get_table_names():
+                    print("📦 Создаем таблицы...")
+                    db.create_all()
+                    
+                    # Создаем админа
+                    from werkzeug.security import generate_password_hash
+                    admin = User(
+                        username='admin',
+                        email='admin@example.com',
+                        password_hash=generate_password_hash('admin123'),
+                        is_admin=True
+                    )
+                    db.session.add(admin)
+                    
+                    # Минимальные тестовые товары
+                    from datetime import datetime
+                    products = [
+                        Product(name='iPhone 15', price=89990, category='Электроника', stock=10, created_at=datetime.utcnow()),
+                        Product(name='Ноутбук Asus', price=64990, category='Электроника', stock=5, created_at=datetime.utcnow()),
+                        Product(name='Футболка', price=1990, category='Одежда', stock=50, created_at=datetime.utcnow()),
+                        Product(name='Книга Python', price=1590, category='Книги', stock=25, created_at=datetime.utcnow()),
+                    ]
+                    
+                    for product in products:
+                        db.session.add(product)
+                    
+                    db.session.commit()
+                    print("✅ База данных инициализирована!")
+                else:
+                    print("✅ Таблицы уже существуют")
             
-            # Создаем минимальные тестовые данные
-            products = [
-                Product(name='Телефон', price=10000, category='Электроника', stock=10),
-                Product(name='Книга', price=500, category='Книги', stock=20),
-            ]
-            for p in products:
-                db.session.add(p)
+            _db_initialized = True
             
-            db.session.commit()
-            print("✅ База данных инициализирована!")
-            
-    except Exception as e:
-        print(f"❌ Ошибка при инициализации базы данных: {e}")
+        except Exception as e:
+            print(f"❌ Ошибка при инициализации: {e}")
+            # Не помечаем как инициализированную, чтобы попробовать снова
+
 # Обработчики ошибок
 @app.errorhandler(404)
 def page_not_found(e):

@@ -956,12 +956,71 @@ def create_admin():
             db.session.commit()
             print('Администратор создан: admin / admin123')
 
-
-# И обновите основной блок:
-if __name__ == '__main__':
+# Функция для инициализации базы данных
+def init_database():
     with app.app_context():
+        # Создаем все таблицы
         db.create_all()
-        create_admin()
+        print("✅ Таблицы созданы/проверены")
+        
+        # Создаем администратора если его нет
+        admin_exists = User.query.filter_by(username='admin').first()
+        if not admin_exists:
+            admin = User(username='admin', email='admin@example.com')
+            admin.set_password('admin123')
+            admin.is_admin = True
+            db.session.add(admin)
+            db.session.commit()
+            print('✅ Администратор создан: admin / admin123')
+        
+        # Добавляем тестовые товары если их нет
+        if Product.query.count() == 0:
+            test_products = [
+                Product(
+                    name='Смартфон Samsung Galaxy S23',
+                    description='Новый флагманский смартфон с камерой 200MP',
+                    price=89999.99,
+                    category='Электроника',
+                    stock=15,
+                    image_filename='phone.jpg'
+                ),
+                Product(
+                    name='Ноутбук Apple MacBook Pro 16',
+                    description='Мощный ноутбук для профессионалов',
+                    price=249999.99,
+                    category='Электроника',
+                    stock=8
+                ),
+                Product(
+                    name='Футболка мужская',
+                    description='Хлопковая футболка, размеры M-XXL',
+                    price=1999.99,
+                    category='Одежда',
+                    stock=50
+                ),
+                Product(
+                    name='Книга "Мастер и Маргарита"',
+                    description='Классика русской литературы',
+                    price=599.99,
+                    category='Книги',
+                    stock=25
+                ),
+                Product(
+                    name='Холодильник Samsung',
+                    description='Двухкамерный холодильник с No Frost',
+                    price=64999.99,
+                    category='Бытовая техника',
+                    stock=5
+                )
+            ]
+            
+            for product in test_products:
+                db.session.add(product)
+            
+            db.session.commit()
+            print(f"✅ Добавлено {len(test_products)} тестовых товаров")
 
-    # Для продакшн используем gunicorn
+# Вызываем инициализацию при запуске
+if __name__ == '__main__':
+    init_database()
     app.run(debug=True, host='0.0.0.0', port=int(os.environ.get('PORT', 10000)))

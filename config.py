@@ -4,7 +4,6 @@ import urllib.parse
 
 load_dotenv()
 
-
 class Config:
     SECRET_KEY = os.environ.get('SECRET_KEY') or 'dev-secret-key-change-in-production'
 
@@ -16,8 +15,20 @@ class Config:
     SQLALCHEMY_DATABASE_URI = DATABASE_URL or 'sqlite:///shop.db'
     SQLALCHEMY_TRACK_MODIFICATIONS = False
 
-    # Для Render загрузка файлов будет временной
-    UPLOAD_FOLDER = os.path.join('static', 'uploads', 'products')
+    # Настройки для загрузки файлов
+    # На Render используем временную папку, локально - постоянную
+    if os.environ.get('RENDER'):
+        # На Render - временная папка
+        UPLOAD_FOLDER = os.path.join('/tmp', 'uploads')
+    else:
+        # Локально - постоянная папка
+        UPLOAD_FOLDER = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'static', 'uploads')
+    
+    PRODUCT_IMAGE_FOLDER = os.path.join(UPLOAD_FOLDER, 'products')
+    
+    # Создаем папки если их нет
+    os.makedirs(PRODUCT_IMAGE_FOLDER, exist_ok=True)
+    
     MAX_CONTENT_LENGTH = 16 * 1024 * 1024  # 16MB max file size
     ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif'}
 
@@ -28,5 +39,4 @@ class Config:
 
     @staticmethod
     def init_app(app):
-        # Создаем папки если их нет
-        os.makedirs(Config.UPLOAD_FOLDER, exist_ok=True)
+        pass

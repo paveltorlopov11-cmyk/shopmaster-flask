@@ -1,0 +1,305 @@
+{% extends "base.html" %}
+
+{% block title %}Оформление заказа - ShopMaster{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <!-- Хлебные крошки -->
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{{ url_for('index') }}">Главная</a></li>
+            <li class="breadcrumb-item"><a href="{{ url_for('cart') }}">Корзина</a></li>
+            <li class="breadcrumb-item active" aria-current="page">Оформление заказа</li>
+        </ol>
+    </nav>
+    
+    <h1 class="mb-4">Оформление заказа</h1>
+    
+    <div class="row">
+        <!-- Форма оформления заказа -->
+        <div class="col-lg-8 mb-4">
+            <div class="card border-0 shadow-sm mb-4">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0"><i class="fas fa-shipping-fast me-2"></i>Информация о доставке</h5>
+                </div>
+                <div class="card-body">
+                    <form method="POST" id="checkoutForm">
+                        <!-- Адрес доставки -->
+                        <div class="mb-4">
+                            <label for="shipping_address" class="form-label fw-bold">
+                                Адрес доставки *
+                            </label>
+                            <textarea class="form-control" 
+                                      id="shipping_address" 
+                                      name="shipping_address" 
+                                      rows="3" 
+                                      required
+                                      placeholder="Укажите полный адрес доставки (город, улица, дом, квартира)">{{ user.address if user.address else '' }}</textarea>
+                            <div class="form-text">
+                                Пожалуйста, укажите точный адрес для доставки
+                            </div>
+                        </div>
+                        
+                        <!-- Адрес для счета (опционально) -->
+                        <div class="mb-4">
+                            <div class="form-check mb-2">
+                                <input class="form-check-input" 
+                                       type="checkbox" 
+                                       id="same_as_shipping"
+                                       checked>
+                                <label class="form-check-label" for="same_as_shipping">
+                                    Адрес для счета совпадает с адресом доставки
+                                </label>
+                            </div>
+                            <textarea class="form-control" 
+                                      id="billing_address" 
+                                      name="billing_address" 
+                                      rows="3" 
+                                      placeholder="Укажите адрес для счета (если отличается)"
+                                      style="display: none;"></textarea>
+                        </div>
+                        
+                        <!-- Способ оплаты -->
+                        <div class="mb-4">
+                            <label class="form-label fw-bold">Способ оплаты *</label>
+                            <div class="row">
+                                <div class="col-md-6 mb-2">
+                                    <div class="form-check">
+                                        <input class="form-check-input" 
+                                               type="radio" 
+                                               name="payment_method" 
+                                               id="card" 
+                                               value="card" 
+                                               checked>
+                                        <label class="form-check-label" for="card">
+                                            <i class="fas fa-credit-card me-2"></i>Банковская карта
+                                        </label>
+                                    </div>
+                                </div>
+                                <div class="col-md-6 mb-2">
+                                    <div class="form-check">
+                                        <input class="form-check-input" 
+                                               type="radio" 
+                                               name="payment_method" 
+                                               id="cash" 
+                                               value="cash">
+                                        <label class="form-check-label" for="cash">
+                                            <i class="fas fa-money-bill-wave me-2"></i>Наличными при получении
+                                        </label>
+                                    </div>
+                                </div>
+                                <div class="col-md-6 mb-2">
+                                    <div class="form-check">
+                                        <input class="form-check-input" 
+                                               type="radio" 
+                                               name="payment_method" 
+                                               id="online" 
+                                               value="online">
+                                        <label class="form-check-label" for="online">
+                                            <i class="fas fa-globe me-2"></i>Онлайн платеж
+                                        </label>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Комментарий к заказу -->
+                        <div class="mb-4">
+                            <label for="notes" class="form-label fw-bold">
+                                Комментарий к заказу
+                            </label>
+                            <textarea class="form-control" 
+                                      id="notes" 
+                                      name="notes" 
+                                      rows="2"
+                                      placeholder="Укажите дополнительные пожелания по доставке или заказу"></textarea>
+                        </div>
+                        
+                        <!-- Контактная информация -->
+                        <div class="mb-4">
+                            <h6 class="fw-bold mb-3">Контактная информация</h6>
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label">Имя</label>
+                                    <input type="text" 
+                                           class="form-control" 
+                                           value="{{ user.username }}" 
+                                           readonly>
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label">Email</label>
+                                    <input type="email" 
+                                           class="form-control" 
+                                           value="{{ user.email }}" 
+                                           readonly>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Кнопки -->
+                        <div class="d-grid gap-2 d-md-flex">
+                            <button type="submit" class="btn btn-success btn-lg flex-grow-1">
+                                <i class="fas fa-check-circle me-2"></i>Подтвердить заказ
+                            </button>
+                            <a href="{{ url_for('cart') }}" class="btn btn-outline-secondary btn-lg">
+                                <i class="fas fa-arrow-left me-2"></i>Вернуться в корзину
+                            </a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+            
+            <!-- Информация о доставке -->
+            <div class="card border-0 shadow-sm">
+                <div class="card-body">
+                    <h6 class="fw-bold mb-3">
+                        <i class="fas fa-info-circle me-2 text-primary"></i>Информация о доставке
+                    </h6>
+                    <ul class="list-unstyled">
+                        <li class="mb-2">
+                            <i class="fas fa-check text-success me-2"></i>
+                            Бесплатная доставка при заказе от 3000₽
+                        </li>
+                        <li class="mb-2">
+                            <i class="fas fa-check text-success me-2"></i>
+                            Срок доставки: 2-5 рабочих дней
+                        </li>
+                        <li class="mb-2">
+                            <i class="fas fa-check text-success me-2"></i>
+                            Возможность самовывоза из пунктов выдачи
+                        </li>
+                        <li>
+                            <i class="fas fa-check text-success me-2"></i>
+                            Курьерская доставка доступна в пределах города
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Информация о заказе -->
+        <div class="col-lg-4 mb-4">
+            <div class="card border-0 shadow-sm sticky-top" style="top: 20px;">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0"><i class="fas fa-shopping-bag me-2"></i>Ваш заказ</h5>
+                </div>
+                <div class="card-body">
+                    <!-- Список товаров -->
+                    <div class="mb-4">
+                        <h6 class="fw-bold mb-3">Товары в заказе ({{ cart_items|length }})</h6>
+                        {% for item in cart_items %}
+                        <div class="d-flex mb-3 pb-3 border-bottom">
+                            {% if item.product.image_filename %}
+                            <img src="{{ url_for('static', filename='uploads/products/' + item.product.image_filename) }}" 
+                                 class="rounded me-3" 
+                                 style="width: 60px; height: 60px; object-fit: cover;"
+                                 alt="{{ item.product.name }}"
+                                 onerror="this.src='https://via.placeholder.com/60x60?text=Img'">
+                            {% else %}
+                            <img src="https://via.placeholder.com/60x60?text=Img" 
+                                 class="rounded me-3" 
+                                 style="width: 60px; height: 60px;"
+                                 alt="Нет изображения">
+                            {% endif %}
+                            <div class="flex-grow-1">
+                                <h6 class="mb-1">{{ item.product.name }}</h6>
+                                <div class="d-flex justify-content-between">
+                                    <small class="text-muted">{{ item.quantity }} × {{ item.product.price }}₽</small>
+                                    <strong>{{ item.product.price * item.quantity }}₽</strong>
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    
+                    <!-- Итоговая сумма -->
+                    <div class="mb-4">
+                        <div class="d-flex justify-content-between mb-2">
+                            <span>Товары ({{ cart_items|sum(attribute='quantity') }})</span>
+                            <span>{{ total }}₽</span>
+                        </div>
+                        <div class="d-flex justify-content-between mb-2">
+                            <span>Доставка</span>
+                            <span class="text-success">
+                                {% if total >= 3000 %}
+                                Бесплатно
+                                {% else %}
+                                300₽
+                                {% endif %}
+                            </span>
+                        </div>
+                        {% if total < 3000 %}
+                        <div class="alert alert-warning py-2 mb-3">
+                            <small>
+                                <i class="fas fa-info-circle me-1"></i>
+                                Добавьте товаров на {{ 3000 - total }}₽ для бесплатной доставки
+                            </small>
+                        </div>
+                        {% endif %}
+                        <hr>
+                        <div class="d-flex justify-content-between">
+                            <h5 class="mb-0">Итого</h5>
+                            <h4 class="mb-0 text-primary">
+                                {% if total >= 3000 %}
+                                {{ total }}₽
+                                {% else %}
+                                {{ total + 300 }}₽
+                                {% endif %}
+                            </h4>
+                        </div>
+                    </div>
+                    
+                    <!-- Защита покупателя -->
+                    <div class="bg-light p-3 rounded">
+                        <div class="d-flex align-items-center mb-2">
+                            <i class="fas fa-shield-alt text-success me-2"></i>
+                            <h6 class="mb-0">Безопасная оплата</h6>
+                        </div>
+                        <p class="small text-muted mb-0">
+                            Все платежи защищены шифрованием. Ваши данные в безопасности.
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Обработка чекбокса "адрес совпадает"
+    const sameAddressCheckbox = document.getElementById('same_as_shipping');
+    const billingAddressField = document.getElementById('billing_address');
+    
+    sameAddressCheckbox.addEventListener('change', function() {
+        if (this.checked) {
+            billingAddressField.style.display = 'none';
+            billingAddressField.required = false;
+        } else {
+            billingAddressField.style.display = 'block';
+            billingAddressField.required = true;
+        }
+    });
+    
+    // Валидация формы
+    const checkoutForm = document.getElementById('checkoutForm');
+    checkoutForm.addEventListener('submit', function(e) {
+        const shippingAddress = document.getElementById('shipping_address').value.trim();
+        
+        if (!shippingAddress) {
+            e.preventDefault();
+            alert('Пожалуйста, укажите адрес доставки');
+            document.getElementById('shipping_address').focus();
+            return;
+        }
+        
+        // Показываем индикатор загрузки
+        const submitBtn = this.querySelector('button[type="submit"]');
+        submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Оформляем заказ...';
+        submitBtn.disabled = true;
+    });
+});
+</script>
+{% endblock %}

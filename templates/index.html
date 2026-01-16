@@ -1,0 +1,335 @@
+{% extends "base.html" %}
+
+{% block title %}Главная - ShopMaster{% endblock %}
+
+{% block content %}
+<!-- Шапка с изображением магазина -->
+<div class="hero-section position-relative mb-5">
+    <div class="bg-primary text-white py-5">
+        <div class="container">
+            <div class="row align-items-center">
+                <div class="col-md-6">
+                    <h1 class="display-4 fw-bold">ShopMaster</h1>
+                    <p class="lead mb-4">Лучший интернет-магазин с 2024 года. Широкий ассортимент, выгодные цены и быстрая доставка.</p>
+                    <a href="{{ url_for('catalog') }}" class="btn btn-light btn-lg">Перейти к покупкам</a>
+                    <a href="{{ url_for('register') }}" class="btn btn-outline-light btn-lg ms-2">Регистрация</a>
+                </div>
+                <div class="col-md-6 text-center">
+                    <img src="{{ url_for('static', filename='images/store_logo.png') }}"
+                         alt="ShopMaster Store"
+                         class="img-fluid rounded shadow"
+                         style="max-height: 300px;">
+                    <div class="mt-3">
+                        <small class="text-white-50"></small>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Категории товаров -->
+<div class="container mb-5">
+    <h2 class="text-center mb-4">Популярные категории</h2>
+    <div class="row">
+        <div class="col-md-3 mb-4">
+            <a href="{{ url_for('catalog') }}?category=Электроника" class="text-decoration-none">
+                <div class="card category-card border-0 shadow-sm hover-shadow">
+                    <div class="card-body text-center">
+                        <i class="fas fa-mobile-alt fa-3x text-primary mb-3"></i>
+                        <h5 class="card-title">Электроника</h5>
+                        <p class="text-muted">Смартфоны, ноутбуки, планшеты</p>
+                    </div>
+                </div>
+            </a>
+        </div>
+        <div class="col-md-3 mb-4">
+            <a href="{{ url_for('catalog') }}?category=Одежда" class="text-decoration-none">
+                <div class="card category-card border-0 shadow-sm hover-shadow">
+                    <div class="card-body text-center">
+                        <i class="fas fa-tshirt fa-3x text-success mb-3"></i>
+                        <h5 class="card-title">Одежда</h5>
+                        <p class="text-muted">Мужская, женская, детская</p>
+                    </div>
+                </div>
+            </a>
+        </div>
+        <div class="col-md-3 mb-4">
+            <a href="{{ url_for('catalog') }}?category=Книги" class="text-decoration-none">
+                <div class="card category-card border-0 shadow-sm hover-shadow">
+                    <div class="card-body text-center">
+                        <i class="fas fa-book fa-3x text-warning mb-3"></i>
+                        <h5 class="card-title">Книги</h5>
+                        <p class="text-muted">Художественная, учебная, бизнес</p>
+                    </div>
+                </div>
+            </a>
+        </div>
+        <div class="col-md-3 mb-4">
+            <a href="{{ url_for('catalog') }}?category=Бытовая техника" class="text-decoration-none">
+                <div class="card category-card border-0 shadow-sm hover-shadow">
+                    <div class="card-body text-center">
+                        <i class="fas fa-blender fa-3x text-info mb-3"></i>
+                        <h5 class="card-title">Техника</h5>
+                        <p class="text-muted">Для дома и кухни</p>
+                    </div>
+                </div>
+            </a>
+        </div>
+    </div>
+</div>
+
+<!-- Блок с интересными предложениями -->
+<div class="bg-light py-5 mb-5">
+    <div class="container">
+        <div class="row align-items-center mb-4">
+            <div class="col">
+                <h2 class="mb-0">🔥 Горячие предложения</h2>
+            </div>
+            <div class="col-auto">
+                <div class="badge bg-danger fs-6">Скидки до 30%</div>
+            </div>
+        </div>
+
+        <div class="row">
+            {% for product in featured_products[:4] %}
+            <div class="col-lg-3 col-md-6 mb-4">
+                <div class="card h-100 product-card border-0 shadow-sm">
+                    {% if product.image_filename %}
+                    <img src="{{ url_for('static', filename='uploads/products/' + product.image_filename) }}"
+                         class="card-img-top product-image"
+                         alt="{{ product.name }}"
+                         onerror="this.src='https://via.placeholder.com/300x200?text=No+Image'">
+                    {% else %}
+                    <img src="https://via.placeholder.com/300x200?text=No+Image"
+                         class="card-img-top product-image"
+                         alt="Нет изображения">
+                    {% endif %}
+
+                    <!-- Бейдж акции -->
+                    <div class="position-absolute top-0 start-0 m-2">
+                        <span class="badge bg-danger">Акция</span>
+                    </div>
+
+                    <div class="card-body d-flex flex-column">
+                        <h5 class="card-title">{{ product.name }}</h5>
+                        <p class="card-text text-muted small">
+    {% if product.description %}
+        {{ product.description[:80] }}{% if product.description|length > 80 %}...{% endif %}
+    {% else %}
+        <span class="text-muted">Нет описания</span>
+    {% endif %}
+</p>
+
+                        <div class="mt-auto">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div>
+                                    <p class="card-text mb-1">
+                                        <strong class="fs-5 text-primary">{{ product.price|int }} ₽</strong>
+                                        {% if product.category == 'Электроника' %}
+                                        <small class="text-danger ms-2">
+                                            <s>{{ (product.price * 1.2)|int }} ₽</s>
+                                        </small>
+                                        {% endif %}
+                                    </p>
+                                    <p class="card-text">
+                                        <small class="text-muted">
+                                            <i class="fas fa-box"></i> В наличии: {{ product.stock }} шт.
+                                        </small>
+                                    </p>
+                                </div>
+                            </div>
+
+                            <div class="d-grid gap-2 mt-3">
+                                {% if current_user.is_authenticated %}
+                               <form method="POST" action="{{ url_for('add_to_cart', product_id=product.id) }}">
+    <button type="submit" class="btn btn-primary">В корзину</button>
+</form>
+                                <!-- Внутри карточки товара, рядом с кнопкой "В корзину" -->
+<a href="{{ url_for('product_detail', product_id=product.id) }}"
+   class="btn btn-outline-secondary btn-sm">
+    <i class="fas fa-eye"></i> Подробнее
+</a>
+                                {% else %}
+                                <a href="{{ url_for('login') }}" class="btn btn-outline-primary btn-sm">
+                                    <i class="fas fa-sign-in-alt"></i> Войдите для покупки
+                                </a>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+
+<!-- Новинки недели -->
+<div class="container mb-5">
+    <h2 class="text-center mb-4">🆕 Новинки недели</h2>
+
+    <div class="row">
+        {% for product in products if product.category == "Электроника" %}
+        <div class="col-md-6 mb-4">
+            <div class="card border-0 shadow-sm">
+                <div class="row g-0">
+                    <div class="col-md-4">
+                        {% if product.image_filename %}
+                        <img src="{{ url_for('static', filename='uploads/products/' + product.image_filename) }}"
+                             class="img-fluid rounded-start h-100 object-fit-cover"
+                             alt="{{ product.name }}"
+                             style="height: 200px; object-fit: cover;"
+                             onerror="this.src='https://via.placeholder.com/200x200?text=No+Image'">
+                        {% else %}
+                        <img src="https://via.placeholder.com/200x200?text=No+Image"
+                             class="img-fluid rounded-start h-100"
+                             alt="Нет изображения">
+                        {% endif %}
+                    </div>
+                    <div class="col-md-8">
+                        <div class="card-body h-100 d-flex flex-column">
+                            <div class="d-flex justify-content-between align-items-start">
+                                <h5 class="card-title">{{ product.name }}</h5>
+                                <span class="badge bg-info">Новинка</span>
+                            </div>
+                            <p class="card-text">{{ product.description[:120] }}...</p>
+                            <div class="mt-auto">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <div>
+                                        <p class="card-text mb-0">
+                                            <strong class="fs-4 text-primary">{{ product.price|int }} ₽</strong>
+                                        </p>
+                                        <small class="text-muted">{{ product.category }}</small>
+                                    </div>
+                                    <a href="{{ url_for('add_to_cart', product_id=product.id) }}"
+                                       class="btn btn-outline-primary">
+                                        <i class="fas fa-shopping-cart"></i>
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+
+<!-- Преимущества магазина -->
+<div class="bg-dark text-white py-5">
+    <div class="container">
+        <h2 class="text-center mb-5">Почему выбирают нас?</h2>
+        <div class="row text-center">
+            <div class="col-md-3 mb-4">
+                <div class="p-4">
+                    <i class="fas fa-shipping-fast fa-3x mb-3 text-primary"></i>
+                    <h5>Быстрая доставка</h5>
+                    <p class="text-white-50">Доставка по городу за 2 часа, по России за 3-5 дней</p>
+                </div>
+            </div>
+            <div class="col-md-3 mb-4">
+                <div class="p-4">
+                    <i class="fas fa-shield-alt fa-3x mb-3 text-success"></i>
+                    <h5>Гарантия качества</h5>
+                    <p class="text-white-50">Все товары с гарантией от производителя</p>
+                </div>
+            </div>
+            <div class="col-md-3 mb-4">
+                <div class="p-4">
+                    <i class="fas fa-headset fa-3x mb-3 text-warning"></i>
+                    <h5>Поддержка 24/7</h5>
+                    <p class="text-white-50">Круглосуточная поддержка по телефону и чату</p>
+                </div>
+            </div>
+            <div class="col-md-3 mb-4">
+                <div class="p-4">
+                    <i class="fas fa-undo fa-3x mb-3 text-info"></i>
+                    <h5>Легкий возврат</h5>
+                    <p class="text-white-50">Возврат товара в течение 14 дней без вопросов</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Отзывы покупателей -->
+<div class="container py-5">
+    <h2 class="text-center mb-4">💬 Отзывы наших покупателей</h2>
+    <div class="row">
+        <div class="col-md-4 mb-4">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-body">
+                    <div class="d-flex align-items-center mb-3">
+                        <div class="rounded-circle bg-primary text-white d-flex align-items-center justify-content-center"
+                             style="width: 50px; height: 50px;">
+                            <i class="fas fa-user"></i>
+                        </div>
+                        <div class="ms-3">
+                            <h6 class="mb-0">Анна Петрова</h6>
+                            <small class="text-muted">5 покупок</small>
+                        </div>
+                    </div>
+                    <p class="card-text">"Отличный магазин! Заказывала ноутбук, доставили быстрее, чем обещали. Качество товара на высоте!"</p>
+                    <div class="text-warning">
+                        <i class="fas fa-star"></i>
+                        <i class="fas fa-star"></i>
+                        <i class="fas fa-star"></i>
+                        <i class="fas fa-star"></i>
+                        <i class="fas fa-star"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4 mb-4">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-body">
+                    <div class="d-flex align-items-center mb-3">
+                        <div class="rounded-circle bg-success text-white d-flex align-items-center justify-content-center"
+                             style="width: 50px; height: 50px;">
+                            <i class="fas fa-user"></i>
+                        </div>
+                        <div class="ms-3">
+                            <h6 class="mb-0">Иван Сидоров</h6>
+                            <small class="text-muted">12 покупок</small>
+                        </div>
+                    </div>
+                    <p class="card-text">"Пользуюсь магазином больше года. Цены адекватные, доставка всегда вовремя. Рекомендую!"</p>
+                    <div class="text-warning">
+                        <i class="fas fa-star"></i>
+                        <i class="fas fa-star"></i>
+                        <i class="fas fa-star"></i>
+                        <i class="fas fa-star"></i>
+                        <i class="fas fa-star-half-alt"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4 mb-4">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-body">
+                    <div class="d-flex align-items-center mb-3">
+                        <div class="rounded-circle bg-warning text-white d-flex align-items-center justify-content-center"
+                             style="width: 50px; height: 50px;">
+                            <i class="fas fa-user"></i>
+                        </div>
+                        <div class="ms-3">
+                            <h6 class="mb-0">Мария Иванова</h6>
+                            <small class="text-muted">8 покупок</small>
+                        </div>
+                    </div>
+                    <p class="card-text">"Отличный сервис! Помогли с выбором подарка, консультант был очень внимателен и помог."</p>
+                    <div class="text-warning">
+                        <i class="fas fa-star"></i>
+                        <i class="fas fa-star"></i>
+                        <i class="fas fa-star"></i>
+                        <i class="fas fa-star"></i>
+                        <i class="fas fa-star"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

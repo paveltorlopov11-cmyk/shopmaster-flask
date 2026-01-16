@@ -1,0 +1,162 @@
+{% extends "base.html" %}
+
+{% block title %}Подтверждение заказа - ShopMaster{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <div class="card border-0 shadow-sm text-center">
+                <div class="card-body p-5">
+                    <!-- Иконка успеха -->
+                    <div class="mb-4">
+                        <div class="rounded-circle bg-success d-inline-flex align-items-center justify-content-center" 
+                             style="width: 100px; height: 100px;">
+                            <i class="fas fa-check fa-3x text-white"></i>
+                        </div>
+                    </div>
+                    
+                    <!-- Заголовок -->
+                    <h1 class="display-6 fw-bold mb-3">Заказ успешно оформлен!</h1>
+                    <p class="lead mb-4">
+                        Спасибо за ваш заказ. Мы отправили подтверждение на email <strong>{{ order.user.email }}</strong>
+                    </p>
+                    
+                    <!-- Номер заказа -->
+                    <div class="alert alert-info mb-4">
+                        <h5 class="mb-0">
+                            <i class="fas fa-receipt me-2"></i>
+                            Номер вашего заказа: <strong>{{ order.order_number }}</strong>
+                        </h5>
+                    </div>
+                    
+                    <!-- Детали заказа -->
+                    <div class="row mb-4">
+                        <div class="col-md-4 mb-3">
+                            <div class="card border-0 bg-light h-100">
+                                <div class="card-body">
+                                    <i class="fas fa-calendar-alt fa-2x text-primary mb-3"></i>
+                                    <h6>Дата заказа</h6>
+                                    <p class="mb-0">{{ order.created_at.strftime('%d.%m.%Y %H:%M') }}</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <div class="card border-0 bg-light h-100">
+                                <div class="card-body">
+                                    <i class="fas fa-money-bill-wave fa-2x text-success mb-3"></i>
+                                    <h6>Сумма заказа</h6>
+                                    <p class="mb-0 fw-bold">{{ order.total_amount }} ₽</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <div class="card border-0 bg-light h-100">
+                                <div class="card-body">
+                                    <i class="fas fa-truck fa-2x text-warning mb-3"></i>
+                                    <h6>Статус</h6>
+                                    <p class="mb-0">
+                                        <span class="badge bg-info">В обработке</span>
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Следующие шаги -->
+                    <div class="card border-0 shadow-sm mb-4">
+                        <div class="card-header bg-light">
+                            <h5 class="mb-0">Что дальше?</h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="row text-start">
+                                <div class="col-md-6 mb-3">
+                                    <div class="d-flex">
+                                        <div class="flex-shrink-0">
+                                            <span class="badge bg-primary rounded-circle p-2">1</span>
+                                        </div>
+                                        <div class="flex-grow-1 ms-3">
+                                            <h6>Подтверждение заказа</h6>
+                                            <p class="small text-muted mb-0">
+                                                Менеджер свяжется с вами в течение 24 часов для подтверждения заказа
+                                            </p>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <div class="d-flex">
+                                        <div class="flex-shrink-0">
+                                            <span class="badge bg-primary rounded-circle p-2">2</span>
+                                        </div>
+                                        <div class="flex-grow-1 ms-3">
+                                            <h6>Обработка и доставка</h6>
+                                            <p class="small text-muted mb-0">
+                                                Заказ будет собран и отправлен в течение 1-2 рабочих дней
+                                            </p>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <div class="d-flex">
+                                        <div class="flex-shrink-0">
+                                            <span class="badge bg-primary rounded-circle p-2">3</span>
+                                        </div>
+                                        <div class="flex-grow-1 ms-3">
+                                            <h6>Отслеживание</h6>
+                                            <p class="small text-muted mb-0">
+                                                Вы получите номер для отслеживания посылки на email
+                                            </p>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <div class="d-flex">
+                                        <div class="flex-shrink-0">
+                                            <span class="badge bg-primary rounded-circle p-2">4</span>
+                                        </div>
+                                        <div class="flex-grow-1 ms-3">
+                                            <h6>Получение</h6>
+                                            <p class="small text-muted mb-0">
+                                                Получите заказ и оставьте отзыв о покупке
+                                            </p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Кнопки действий -->
+                    <div class="d-grid gap-2 d-md-flex justify-content-center">
+                        <a href="{{ url_for('order_detail', order_id=order.id) }}" class="btn btn-primary btn-lg">
+                            <i class="fas fa-eye me-2"></i>Просмотреть детали заказа
+                        </a>
+                        <a href="{{ url_for('catalog') }}" class="btn btn-outline-primary btn-lg">
+                            <i class="fas fa-shopping-bag me-2"></i>Продолжить покупки
+                        </a>
+                    </div>
+                    
+                    <!-- Контактная информация -->
+                    <div class="mt-5 pt-4 border-top">
+                        <h6 class="mb-3">Нужна помощь?</h6>
+                        <div class="row">
+                            <div class="col-md-6">
+                                <p class="mb-1">
+                                    <i class="fas fa-phone me-2 text-primary"></i>
+                                    <strong>Телефон:</strong> +7 (999) 123-45-67
+                                </p>
+                            </div>
+                            <div class="col-md-6">
+                                <p class="mb-1">
+                                    <i class="fas fa-envelope me-2 text-primary"></i>
+                                    <strong>Email:</strong> support@shopmaster.ru
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,525 @@
+{% extends "base.html" %}
+
+{% block title %}Каталог товаров - ShopMaster{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="row">
+        <!-- Заголовок и фильтры -->
+        <div class="col-12 mb-4">
+            <div class="d-flex justify-content-between align-items-center">
+                <h1 class="h2 mb-0">Каталог товаров</h1>
+                <div>
+                    <span class="text-muted">{{ products|length }} товаров</span>
+                </div>
+            </div>
+            <hr class="my-3">
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Боковая панель с фильтрами -->
+        <div class="col-lg-3 col-md-4 mb-4">
+            <div class="card border-0 shadow-sm">
+                <div class="card-body">
+                    <h5 class="card-title mb-3">
+                        <i class="fas fa-filter me-2"></i>Фильтры
+                    </h5>
+
+                    <!-- Поиск -->
+                    <div class="mb-4">
+                        <form method="GET" action="{{ url_for('catalog') }}" id="searchForm">
+                            <div class="input-group">
+                                <input type="text"
+                                       class="form-control"
+                                       name="search"
+                                       placeholder="Поиск товаров..."
+                                       value="{{ request.args.get('search', '') }}">
+                                <button class="btn btn-outline-primary" type="submit">
+                                    <i class="fas fa-search"></i>
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+
+                    <!-- Категории -->
+                    {% if categories %}
+                    <div class="mb-4">
+                        <h6 class="fw-bold mb-3">
+                            <i class="fas fa-tags me-2"></i>Категории
+                        </h6>
+                        <div class="list-group list-group-flush">
+                            <a href="{{ url_for('catalog') }}"
+                               class="list-group-item list-group-item-action d-flex justify-content-between align-items-center {% if not request.args.get('category') %}active{% endif %}">
+                                Все категории
+                                <span class="badge bg-primary rounded-pill">{{ total_products }}</span>
+                            </a>
+                            {% for cat in categories %}
+                            <a href="{{ url_for('catalog') }}?category={{ cat }}"
+                               class="list-group-item list-group-item-action d-flex justify-content-between align-items-center {% if request.args.get('category') == cat %}active{% endif %}">
+                                {{ cat }}
+                                <span class="badge bg-secondary rounded-pill">
+                                    {{ category_counts[cat] if category_counts[cat] else 0 }}
+                                </span>
+                            </a>
+                            {% endfor %}
+                        </div>
+                    </div>
+                    {% endif %}
+
+                    <!-- Сортировка -->
+                    <div class="mb-4">
+                        <h6 class="fw-bold mb-3">
+                            <i class="fas fa-sort me-2"></i>Сортировка
+                        </h6>
+                        <select class="form-select" id="sortSelect">
+                            <option value="newest" {% if request.args.get('sort') == 'newest' %}selected{% endif %}>
+                                Сначала новые
+                            </option>
+                            <option value="price_asc" {% if request.args.get('sort') == 'price_asc' %}selected{% endif %}>
+                                Цена: по возрастанию
+                            </option>
+                            <option value="price_desc" {% if request.args.get('sort') == 'price_desc' %}selected{% endif %}>
+                                Цена: по убыванию
+                            </option>
+                            <option value="name" {% if request.args.get('sort') == 'name' %}selected{% endif %}>
+                                По названию
+                            </option>
+                        </select>
+                    </div>
+
+                    <!-- Цена -->
+                    <div class="mb-4">
+                        <h6 class="fw-bold mb-3">
+                            <i class="fas fa-ruble-sign me-2"></i>Цена
+                        </h6>
+                        <div class="input-group mb-2">
+                            <span class="input-group-text">от</span>
+                            <input type="number"
+                                   class="form-control"
+                                   id="minPrice"
+                                   placeholder="0"
+                                   value="{{ request.args.get('min_price', '') }}">
+                            <span class="input-group-text">₽</span>
+                        </div>
+                        <div class="input-group">
+                            <span class="input-group-text">до</span>
+                            <input type="number"
+                                   class="form-control"
+                                   id="maxPrice"
+                                   placeholder="999999"
+                                   value="{{ request.args.get('max_price', '') }}">
+                            <span class="input-group-text">₽</span>
+                        </div>
+                    </div>
+
+                    <!-- Кнопка применения фильтров -->
+                    <div class="d-grid">
+                        <button type="button" id="applyFilters" class="btn btn-primary">
+                            <i class="fas fa-check me-2"></i>Применить
+                        </button>
+                        <a href="{{ url_for('catalog') }}" class="btn btn-outline-secondary mt-2">
+                            <i class="fas fa-times me-2"></i>Сбросить все
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Рекомендации -->
+            <div class="card border-0 shadow-sm mt-4">
+                <div class="card-body">
+                    <h6 class="fw-bold mb-3">
+                        <i class="fas fa-fire me-2"></i>Популярное
+                    </h6>
+                    {% if featured_products %}
+                        {% for product in featured_products[:3] %}
+                        <div class="d-flex mb-3">
+                            {% if product.image_filename %}
+                            <img src="{{ url_for('static', filename='uploads/products/' + product.image_filename) }}"
+                                 class="rounded me-3"
+                                 style="width: 60px; height: 60px; object-fit: cover;"
+                                 alt="{{ product.name }}"
+                                 onerror="this.src='https://via.placeholder.com/60x60?text=Img'">
+                            {% else %}
+                            <img src="https://via.placeholder.com/60x60?text=Img"
+                                 class="rounded me-3"
+                                 style="width: 60px; height: 60px;"
+                                 alt="Нет изображения">
+                            {% endif %}
+                            <div>
+                                <h6 class="mb-1">
+                                    <a href="{{ url_for('product_detail', product_id=product.id) }}"
+                                       class="text-decoration-none text-dark">
+                                        {{ product.name[:25] }}{% if product.name|length > 25 %}...{% endif %}
+                                    </a>
+                                </h6>
+                                <p class="mb-0 text-primary fw-bold">{{ product.price|int }} ₽</p>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Основной контент - товары -->
+        <div class="col-lg-9 col-md-8">
+            <!-- Индикаторы активных фильтров -->
+            {% if request.args.get('search') or request.args.get('category') or request.args.get('min_price') or request.args.get('max_price') %}
+            <div class="card border-0 shadow-sm mb-4">
+                <div class="card-body py-2">
+                    <div class="d-flex flex-wrap align-items-center">
+                        <span class="me-2 text-muted">Активные фильтры:</span>
+
+                        {% if request.args.get('search') %}
+                        <span class="badge bg-primary me-2 mb-1">
+                            Поиск: "{{ request.args.get('search') }}"
+                            <a href="{{ url_for('catalog', **remove_filter('search')) }}"
+                               class="text-white ms-1" style="text-decoration: none;">×</a>
+                        </span>
+                        {% endif %}
+
+                        {% if request.args.get('category') %}
+                        <span class="badge bg-success me-2 mb-1">
+                            Категория: {{ request.args.get('category') }}
+                            <a href="{{ url_for('catalog', **remove_filter('category')) }}"
+                               class="text-white ms-1" style="text-decoration: none;">×</a>
+                        </span>
+                        {% endif %}
+
+                        {% if request.args.get('min_price') %}
+                        <span class="badge bg-info me-2 mb-1">
+                            Цена от: {{ request.args.get('min_price') }}₽
+                            <a href="{{ url_for('catalog', **remove_filter('min_price')) }}"
+                               class="text-white ms-1" style="text-decoration: none;">×</a>
+                        </span>
+                        {% endif %}
+
+                        {% if request.args.get('max_price') %}
+                        <span class="badge bg-warning me-2 mb-1">
+                            Цена до: {{ request.args.get('max_price') }}₽
+                            <a href="{{ url_for('catalog', **remove_filter('max_price')) }}"
+                               class="text-white ms-1" style="text-decoration: none;">×</a>
+                        </span>
+                        {% endif %}
+
+                        <a href="{{ url_for('catalog') }}" class="ms-auto text-decoration-none small">
+                            <i class="fas fa-times me-1"></i>Очистить все
+                        </a>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Товары -->
+            <div class="row">
+                {% if products %}
+                    {% for product in products %}
+                    <div class="col-xl-3 col-lg-4 col-md-6 mb-4">
+                        <div class="card h-100 product-card border-0 shadow-sm">
+                            <!-- Бейдж акции -->
+                            {% if product.category == 'Электроника' %}
+                            <div class="position-absolute top-0 start-0 m-2">
+                                <span class="badge bg-danger">Акция -20%</span>
+                            </div>
+                            {% elif product.category == 'Книги' %}
+                            <div class="position-absolute top-0 start-0 m-2">
+                                <span class="badge bg-success">Бестселлер</span>
+                            </div>
+                            {% endif %}
+
+                            <!-- Изображение товара -->
+                            <div class="position-relative" style="height: 200px; overflow: hidden;">
+                                <a href="{{ url_for('product_detail', product_id=product.id) }}">
+                                    {% if product.image_filename %}
+                                    <img src="{{ url_for('static', filename='uploads/products/' + product.image_filename) }}"
+                                         class="card-img-top h-100 w-100"
+                                         alt="{{ product.name }}"
+                                         style="object-fit: cover; transition: transform 0.3s;"
+                                         onerror="this.src='https://via.placeholder.com/300x200?text=No+Image'">
+                                    {% else %}
+                                    <img src="https://via.placeholder.com/300x200?text=No+Image"
+                                         class="card-img-top h-100 w-100"
+                                         alt="Нет изображения"
+                                         style="object-fit: cover;">
+                                    {% endif %}
+                                </a>
+
+                                <!-- Кнопка быстрого просмотра -->
+                                <div class="position-absolute top-0 end-0 m-2">
+                                    <a href="{{ url_for('product_detail', product_id=product.id) }}"
+                                       class="btn btn-sm btn-light rounded-circle shadow-sm"
+                                       title="Быстрый просмотр"
+                                       style="width: 36px; height: 36px; display: flex; align-items: center; justify-content: center;">
+                                        <i class="fas fa-eye text-primary"></i>
+                                    </a>
+                                </div>
+                            </div>
+
+                            <!-- Тело карточки -->
+                            <div class="card-body d-flex flex-column">
+                                <!-- Категория -->
+                                {% if product.category %}
+                                <div class="mb-2">
+                                    <span class="badge bg-light text-dark border">{{ product.category }}</span>
+                                </div>
+                                {% endif %}
+
+                                <!-- Название товара -->
+                                <h5 class="card-title">
+                                    <a href="{{ url_for('product_detail', product_id=product.id) }}"
+                                       class="text-decoration-none text-dark">
+                                        {{ product.name }}
+                                    </a>
+                                </h5>
+
+                                <!-- Описание -->
+                                <p class="card-text text-muted small flex-grow-1">
+                                    {% if product.description %}
+                                        {{ product.description[:60] }}{% if product.description|length > 60 %}...{% endif %}
+                                    {% else %}
+                                        <span class="text-muted">Нет описания</span>
+                                    {% endif %}
+                                </p>
+
+                                <!-- Цена и наличие -->
+                                <div class="mt-auto">
+                                    <div class="d-flex justify-content-between align-items-center mb-3">
+                                        <div>
+                                            <h5 class="text-primary mb-0">{{ product.price|int }} ₽</h5>
+                                            {% if product.category == 'Электроника' %}
+                                            <small class="text-danger">
+                                                <s>{{ (product.price * 1.2)|int }} ₽</s>
+                                            </small>
+                                            {% endif %}
+                                        </div>
+                                        <div>
+                                            {% if product.stock > 10 %}
+                                            <span class="badge bg-success">В наличии</span>
+                                            {% elif product.stock > 0 %}
+                                            <span class="badge bg-warning">Мало</span>
+                                            {% else %}
+                                            <span class="badge bg-danger">Нет в наличии</span>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+
+                                    <!-- Кнопки действий -->
+                                    <div class="d-grid gap-2">
+                                        {% if current_user.is_authenticated and product.stock > 0 %}
+                                        <form method="POST" action="{{ url_for('add_to_cart', product_id=product.id) }}">
+                                            <button type="submit" class="btn btn-primary btn-sm w-100">
+                                                <i class="fas fa-cart-plus me-1"></i>В корзину
+                                            </button>
+                                        </form>
+                                        {% elif product.stock <= 0 %}
+                                        <button class="btn btn-secondary btn-sm w-100" disabled>
+                                            <i class="fas fa-ban me-1"></i>Недоступно
+                                        </button>
+                                        {% else %}
+                                        <a href="{{ url_for('login') }}" class="btn btn-outline-primary btn-sm w-100">
+                                            <i class="fas fa-sign-in-alt me-1"></i>Войдите для покупки
+                                        </a>
+                                        {% endif %}
+
+                                        <a href="{{ url_for('product_detail', product_id=product.id) }}"
+                                           class="btn btn-outline-secondary btn-sm">
+                                            <i class="fas fa-info-circle me-1"></i>Подробнее
+                                        </a>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Футер карточки -->
+                            <div class="card-footer bg-transparent border-0 pt-0">
+                                <small class="text-muted">
+                                    <i class="fas fa-calendar-alt me-1"></i>
+                                    Добавлен: {{ product.created_at.strftime('%d.%m.%Y') }}
+                                </small>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                {% else %}
+                <!-- Если товаров нет -->
+                <div class="col-12">
+                    <div class="card border-0 shadow-sm">
+                        <div class="card-body text-center py-5">
+                            <i class="fas fa-search fa-4x text-muted mb-4"></i>
+                            <h3 class="mb-3">Товары не найдены</h3>
+                            <p class="text-muted mb-4">
+                                Попробуйте изменить параметры поиска или выберите другую категорию
+                            </p>
+                            <a href="{{ url_for('catalog') }}" class="btn btn-primary">
+                                <i class="fas fa-redo me-2"></i>Показать все товары
+                            </a>
+                        </div>
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+
+            <!-- Пагинация (можно добавить позже) -->
+            {% if products and products|length > 0 %}
+            <nav aria-label="Навигация по страницам" class="mt-4">
+                <ul class="pagination justify-content-center">
+                    <li class="page-item disabled">
+                        <a class="page-link" href="#" tabindex="-1" aria-disabled="true">
+                            <i class="fas fa-chevron-left"></i>
+                        </a>
+                    </li>
+                    <li class="page-item active"><a class="page-link" href="#">1</a></li>
+                    <li class="page-item"><a class="page-link" href="#">2</a></li>
+                    <li class="page-item"><a class="page-link" href="#">3</a></li>
+                    <li class="page-item">
+                        <a class="page-link" href="#">
+                            <i class="fas fa-chevron-right"></i>
+                        </a>
+                    </li>
+                </ul>
+            </nav>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Обработка сортировки
+    document.getElementById('sortSelect').addEventListener('change', function() {
+        applyFilters();
+    });
+
+    // Обработка кнопки применения фильтров
+    document.getElementById('applyFilters').addEventListener('click', function() {
+        applyFilters();
+    });
+
+    // Обработка нажатия Enter в полях цены
+    document.getElementById('minPrice').addEventListener('keypress', function(e) {
+        if (e.key === 'Enter') applyFilters();
+    });
+
+    document.getElementById('maxPrice').addEventListener('keypress', function(e) {
+        if (e.key === 'Enter') applyFilters();
+    });
+
+    // Функция применения фильтров
+    function applyFilters() {
+        const url = new URL(window.location.href);
+        const searchParams = new URLSearchParams(url.search);
+
+        // Очищаем старые параметры
+        searchParams.delete('sort');
+        searchParams.delete('min_price');
+        searchParams.delete('max_price');
+
+        // Добавляем новые параметры
+        const sortValue = document.getElementById('sortSelect').value;
+        if (sortValue && sortValue !== 'newest') {
+            searchParams.set('sort', sortValue);
+        }
+
+        const minPrice = document.getElementById('minPrice').value;
+        if (minPrice) {
+            searchParams.set('min_price', minPrice);
+        }
+
+        const maxPrice = document.getElementById('maxPrice').value;
+        if (maxPrice) {
+            searchParams.set('max_price', maxPrice);
+        }
+
+        // Обновляем URL
+        url.search = searchParams.toString();
+        window.location.href = url.toString();
+    }
+
+    // Быстрое добавление в корзину через AJAX
+    const cartForms = document.querySelectorAll('form[action*="add_to_cart"]');
+    cartForms.forEach(form => {
+        form.addEventListener('submit', function(e) {
+            e.preventDefault();
+
+            const formData = new FormData(th// Быстрое добавление в корзину через AJAX
+const cartForms = document.querySelectorAll('form[action*="add_to_cart"]');
+cartForms.forEach(form => {
+    form.addEventListener('submit', function(e) {
+        e.preventDefault();
+
+        // Проверяем, поддерживает ли браузер FormData
+        if (!window.FormData) {
+            this.submit();
+            return;
+        }
+
+        const formData = new FormData(this);
+        const url = this.action;
+
+        fetch(url, {
+            method: 'POST',
+            body: formData,
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest'
+            }
+        })
+        .then(response => {
+            if (!response.ok) {
+                throw new Error('Network response was not ok');
+            }
+            return response.json();
+        })
+        .then(data => {
+            if (data.success) {
+                // Обновляем счетчик корзины
+                const cartBadge = document.querySelector('.cart-count');
+                if (cartBadge) {
+                    cartBadge.textContent = data.cart_count;
+                }
+
+                // Показываем уведомление
+                showNotification(data.message, 'success');
+            } else {
+                showNotification(data.message, 'warning');
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            // Если AJAX не сработал, отправляем форму обычным способом
+            this.submit();
+        });
+    });
+});
+
+    // Функция показа уведомлений
+    function showNotification(message, type) {
+        // Создаем элемент уведомления
+        const notification = document.createElement('div');
+        notification.className = `alert alert-${type} alert-dismissible fade show position-fixed`;
+        notification.style.cssText = `
+            top: 20px;
+            right: 20px;
+            z-index: 9999;
+            min-width: 300px;
+        `;
+        notification.innerHTML = `
+            <div class="d-flex align-items-center">
+                <i class="fas fa-${type === 'success' ? 'check-circle' : 'exclamation-triangle'} me-2"></i>
+                <div>${message}</div>
+                <button type="button" class="btn-close ms-auto" data-bs-dismiss="alert"></button>
+            </div>
+        `;
+
+        // Добавляем на страницу
+        document.body.appendChild(notification);
+
+        // Автоматически скрываем через 3 секунды
+        setTimeout(() => {
+            notification.remove();
+        }, 3000);
+    }
+});
+</script>
+{% endblock %}

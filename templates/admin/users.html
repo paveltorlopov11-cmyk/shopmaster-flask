@@ -1,0 +1,69 @@
+{% extends "admin_base.html" %}
+
+{% block title %}Управление пользователями - ShopMaster{% endblock %}
+
+{% block admin_content %}
+<h1 class="mb-4">Управление пользователями</h1>
+
+<div class="card">
+    <div class="card-header d-flex justify-content-between align-items-center">
+        <h5 class="mb-0">Список пользователей</h5>
+        <span class="badge bg-primary">Всего: {{ users|length }}</span>
+    </div>
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="table table-hover">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Имя пользователя</th>
+                        <th>Email</th>
+                        <th>Роль</th>
+                        <th>Дата регистрации</th>
+                        <th>Действия</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for user in users %}
+                    <tr>
+                        <td>{{ user.id }}</td>
+                        <td>{{ user.username }}</td>
+                        <td>{{ user.email }}</td>
+                        <td>
+                            {% if user.is_admin %}
+                            <span class="badge bg-danger">Администратор</span>
+                            {% else %}
+                            <span class="badge bg-secondary">Пользователь</span>
+                            {% endif %}
+                        </td>
+                        <td>{{ user.created_at.strftime('%d.%m.%Y') }}</td>
+                        <td>
+                            {% if user.id != current_user.id %}
+                            <form method="POST" action="{{ url_for('toggle_admin', id=user.id) }}" class="d-inline">
+                                <button type="submit" class="btn btn-sm btn-warning">
+                                    {% if user.is_admin %}
+                                    Снять права
+                                    {% else %}
+                                    Сделать админом
+                                    {% endif %}
+                                </button>
+                            </form>
+                            
+                            <form method="POST" action="{{ url_for('delete_user', id=user.id) }}" 
+                                  class="d-inline" onsubmit="return confirm('Удалить пользователя {{ user.username }}?')">
+                                <button type="submit" class="btn btn-sm btn-danger">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                            </form>
+                            {% else %}
+                            <span class="text-muted">Это вы</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}

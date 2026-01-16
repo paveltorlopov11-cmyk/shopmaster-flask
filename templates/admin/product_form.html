@@ -56,6 +56,9 @@
                             <label for="image" class="form-label">Изображение товара</label>
                             <input type="file" class="form-control" id="image" name="image" 
                                    accept=".jpg,.jpeg,.png,.gif">
+                            <div class="form-text">
+                                Максимальный размер: 16MB. Форматы: JPG, PNG, GIF
+                            </div>
                             {% if product and product.image_filename %}
                             <div class="form-text">
                                 Текущее изображение: {{ product.image_filename }}
@@ -85,17 +88,58 @@
                 <ul>
                     <li>Форматы: JPG, PNG, GIF</li>
                     <li>Максимальный размер: 16MB</li>
-                    <li>Рекомендуемое соотношение: 1:1</li>
+                    <li>Рекомендуемое соотношение: 1:1 или 4:3</li>
+                    <li>Автоматически оптимизируется до 800x800px</li>
                 </ul>
                 
                 {% if product and product.image_filename %}
                 <hr>
                 <p><strong>Текущее изображение:</strong></p>
-                <img src="{{ url_for('static', filename='uploads/products/' + product.image_filename) }}" 
-                     alt="{{ product.name }}" class="img-fluid rounded">
+                <img src="{{ url_for('uploaded_file', filename=product.image_filename) }}" 
+                     alt="{{ product.name }}" 
+                     class="img-fluid rounded mb-2"
+                     style="max-height: 200px; object-fit: contain;">
+                <p class="small text-muted mb-0">
+                    Имя файла: {{ product.image_filename }}
+                </p>
+                {% else %}
+                <hr>
+                <p><strong>Предварительный просмотр:</strong></p>
+                <div id="imagePreview" class="text-center py-3 border rounded">
+                    <p class="text-muted mb-0">Изображение появится здесь после выбора</p>
+                </div>
                 {% endif %}
             </div>
         </div>
     </div>
 </div>
+
+{% if not product or not product.image_filename %}
+<script>
+document.getElementById('image').addEventListener('change', function(e) {
+    const file = e.target.files[0];
+    const preview = document.getElementById('imagePreview');
+    
+    if (file) {
+        const reader = new FileReader();
+        
+        reader.onload = function(e) {
+            preview.innerHTML = `
+                <img src="${e.target.result}" 
+                     class="img-fluid rounded" 
+                     style="max-height: 200px; object-fit: contain;"
+                     alt="Предварительный просмотр">
+                <p class="small text-muted mt-2 mb-0">
+                    ${file.name} (${(file.size / 1024).toFixed(1)} KB)
+                </p>
+            `;
+        }
+        
+        reader.readAsDataURL(file);
+    } else {
+        preview.innerHTML = '<p class="text-muted mb-0">Изображение появится здесь после выбора</p>';
+    }
+});
+</script>
+{% endif %}
 {% endblock %}
